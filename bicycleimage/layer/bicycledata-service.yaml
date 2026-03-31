@@ -1,0 +1,150 @@
+# METABEGIN
+# X-Env-Layer-Name: bicycledata-service
+# X-Env-Layer-Category: general
+# X-Env-Layer-Requires: locale-base
+# X-Env-VarPrefix: bicycledata
+# METAEND
+---
+mmdebstrap:
+  packages:
+    - locales
+    - keyboard-configuration
+    - console-setup
+    - tzdata
+    - python3
+    - python3-venv
+    - python3-pip
+    - python3-lgpio
+    - python3-gpiozero
+    - network-manager
+    - bluez
+  customize-hooks:
+    - |
+      export BICYCLEDATA_USER="$IGconf_device_user1"
+      envsubst < "$SRCROOT/bicycledata.service.tpl" > "$1/etc/systemd/system/bicycledata.service"
+    - |
+      # Provision a preinstalled venv for the bicycledata service.
+      APP_HOME="/home/$IGconf_device_user1/bicycleinit"
+      install -d "$1$APP_HOME"
+      chroot "$1" /usr/bin/python3 -m venv --system-site-packages "$APP_HOME/.env"
+      chroot "$1" "$APP_HOME/.env/bin/pip" install --upgrade pip setuptools wheel
+
+      # Optionally include app files from SRCROOT if they exist.
+      if [ -f "$SRCROOT/bicycleinit.py" ]; then
+        install -m 755 "$SRCROOT/bicycleinit.py" "$1$APP_HOME/bicycleinit.py"
+      fi
+      if [ -f "$SRCROOT/requirements.txt" ]; then
+        install -m 644 "$SRCROOT/requirements.txt" "$1$APP_HOME/requirements.txt"
+        chroot "$1" "$APP_HOME/.env/bin/pip" install --no-cache-dir -r "$APP_HOME/requirements.txt"
+      fi
+
+      chroot "$1" chown -R "$IGconf_device_user1:$IGconf_device_user1" "$APP_HOME"
+    - |
+      # Allow vti to run selected commands with sudo without password.
+      install -d -m 755 "$1/etc/sudoers.d"
+      cat > "$1/etc/sudoers.d/vti-nopasswd" << 'EOF'
+      vti ALL=(ALL) NOPASSWD: /usr/sbin/shutdown, /usr/bin/nmcli, /usr/bin/hciconfig
+      EOF
+      chmod 440 "$1/etc/sudoers.d/vti-nopasswd"
+    - $BDEBSTRAP_HOOKS/enable-units "$1" bicycledata
+    - install -m 644 "$SRCROOT/bicycledata-config.txt" "$1/boot/firmware/config.txt"
+    - |
+      CMD="$1/boot/firmware/cmdline.txt"
+      if [ -f "$CMD" ]; then
+        LINE="$(cat "$CMD")"
+        LINE="$(printf '%s\n' "$LINE" | sed -E 's/(^|[[:space:]])console=(serial[0-9]+|ttyAMA[0-9]+|ttyS[0-9]+),[0-9]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
+        printf '%s\n' "$LINE" > "$CMD"
+      fi
+    - |
+      # Prevent login getty from taking UART devices on first boot.
+      for UNIT in \
+        serial-getty@serial0.service \
+        serial-getty@ttyAMA0.service \
+        serial-getty@ttyAMA10.service \
+        serial-getty@ttyS0.service
+      do
+        rm -f "$1/etc/systemd/system/getty.target.wants/$UNIT"
+        rm -f "$1/etc/systemd/system/multi-user.target.wants/$UNIT"
+        rm -f "$1/etc/systemd/system/$UNIT"
+      done
+    - |
+      # Apply configured locale settings explicitly from IGconf values.
+      LOCALE_DEFAULT="${IGconf_locale_default:-sv_SE.UTF-8}"
+      LOCALE_TIMEZONE="${IGconf_locale_timezone:-Europe/Stockholm}"
+      LOCALE_KEYMAP="${IGconf_locale_keyboard_keymap:-se}"
+      LOCALE_LAYOUT="${IGconf_locale_keyboard_layout:-Swedish}"
+      printf '%s UTF-8\n' "$LOCALE_DEFAULT" > "$1/etc/locale.gen"
+      chroot "$1" locale-gen "$LOCALE_DEFAULT" || true
+      printf 'LANG=%s\n' "$LOCALE_DEFAULT" > "$1/etc/default/locale"
+      printf 'LC_ALL=%s\n' "$LOCALE_DEFAULT" >> "$1/etc/default/locale"
+      printf '%s\n' "$LOCALE_TIMEZONE" > "$1/etc/timezone"
+      ln -sf "/usr/share/zoneinfo/$LOCALE_TIMEZONE" "$1/etc/localtime"
+      cat > "$1/etc/default/keyboard" <<EOF
+      XKBMODEL="pc105"
+      XKBLAYOUT="$LOCALE_KEYMAP"
+      XKBVARIANT=""
+      XKBOPTIONS=""
+      BACKSPACE="guess"
+      EOF
+      chroot "$1" bash -c "
+        debconf-set-selections <<'EOD'
+        keyboard-configuration keyboard-configuration/xkb-keymap select $LOCALE_LAYOUT
+        EOD
+      " || true
+    - |
+      # Ensure /dev/serial0 exists by aliasing the active UART device.
+      install -d "$1/etc/udev/rules.d"
+      cat > "$1/etc/udev/rules.d/99-serial0.rules" << 'EOF'
+      SUBSYSTEM=="tty", KERNEL=="ttyAMA10", SYMLINK+="serial0"
+      SUBSYSTEM=="tty", KERNEL=="ttyAMA0", SYMLINK+="serial0"
+      SUBSYSTEM=="tty", KERNEL=="ttyS0", SYMLINK+="serial0"
+      EOF
+    - |
+      # Configure GPIO permissions and grant gpio group access to the app user.
+      chroot "$1" /usr/sbin/groupadd -f gpio || true
+      if chroot "$1" id -u "$IGconf_device_user1" >/dev/null 2>&1; then
+        chroot "$1" /usr/sbin/usermod -aG gpio "$IGconf_device_user1" || true
+      fi
+      install -d "$1/etc/udev/rules.d"
+      cat > "$1/etc/udev/rules.d/99-gpio.rules" << 'EOF'
+      SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
+      SUBSYSTEM=="gpio", KERNEL=="gpio*", GROUP="gpio", MODE="0660"
+      EOF
+    - |
+      WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
+      if [ -f "$WPA" ]; then
+        if grep -q '^country=' "$WPA"; then
+          sed -i 's/^country=.*/country=SE/' "$WPA"
+        else
+          printf 'country=SE\n' >> "$WPA"
+        fi
+
+        # Seed a default network profile if it is missing.
+        if ! grep -q 'ssid="bicycledata"' "$WPA"; then
+          printf '\nnetwork={\n  ssid="bicycledata"\n  psk="bicycledata"\n}\n' >> "$WPA"
+        fi
+      fi
+
+      # Seed an auto-connect NetworkManager profile for first boot.
+      install -d -m 700 "$1/etc/NetworkManager/system-connections"
+      cat > "$1/etc/NetworkManager/system-connections/bicycledata.nmconnection" << 'EOF'
+      [connection]
+      id=bicycledata
+      type=wifi
+      autoconnect=true
+
+      [wifi]
+      mode=infrastructure
+      ssid=bicycledata
+
+      [wifi-security]
+      key-mgmt=wpa-psk
+      psk=bicycledata
+
+      [ipv4]
+      method=auto
+
+      [ipv6]
+      method=auto
+      EOF
+      chmod 600 "$1/etc/NetworkManager/system-connections/bicycledata.nmconnection"

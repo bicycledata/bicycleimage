@@ -1,0 +1,33 @@
+include:
+  file: bookworm-minbase.yaml
+
+device:
+  layer: rpi5
+  user1: vti
+  user1passhash: "$6$MIStuXRp.TpuYpc1$pXYwrx5EeIbX66lPKwIahvK5tW9wuypXp4r/WLUNcyuAV.yc54Cea1Ocogb/VF/1Ak6o/LdRNe89mKJUnQfuI/"
+  hostname: bicycledata
+
+image:
+  layer: image-rpios
+  boot_part_size: 128M
+  root_part_size: 1536M
+  name: bicycledata
+
+locale:
+  default: sv_SE.UTF-8
+  timezone: Europe/Stockholm
+  keyboard_keymap: se
+  keyboard_layout: Swedish
+
+ssh:
+  pubkey_only: n
+
+packages:
+  - wpasupplicant
+  - git
+  - btop
+  - curl
+
+layer:
+  base: bookworm-minbase
+  custom: bicycledata-service
