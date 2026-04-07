@@ -30,12 +30,12 @@ mmdebstrap:
       printf 'Europe/Stockholm\n' > "$1/etc/timezone"
       ln -sf /usr/share/zoneinfo/Europe/Stockholm "$1/etc/localtime"
       cat > "$1/etc/default/keyboard" << 'EOF'
-XKBMODEL="pc105"
-XKBLAYOUT="se"
-XKBVARIANT=""
-XKBOPTIONS=""
-BACKSPACE="guess"
-EOF
+      XKBMODEL="pc105"
+      XKBLAYOUT="se"
+      XKBVARIANT=""
+      XKBOPTIONS=""
+      BACKSPACE="guess"
+      EOF
       WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
       if [ -f "$WPA" ]; then
         if grep -q '^country=' "$WPA"; then
