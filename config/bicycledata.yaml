@@ -1,5 +1,5 @@
 device:
-  layer: pi5
+  layer: rpi5
   user1: vti
   user1pass: Fo0bar!!
   hostname: bicycledata
