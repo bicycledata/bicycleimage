@@ -1,18 +1,25 @@
-include:
-  file: bookworm-minbase.yaml
-
 device:
-  layer: rpi5
-  hostname: bicycledata
   user1: vti
   user1pass: Fo0bar!!
+  hostname: bicycledata
 
 image:
   layer: image-rpios
-  boot_part_size: 200%
-  root_part_size: 300%
+  boot_part_size: 128M
+  root_part_size: 1536M
   name: bicycledata
 
+ssh:
+  pubkey_only: n
+
+packages:
+  - wpasupplicant
+  - git
+  - btop
+
+env:
+  SSID: bicycledata
+  PSK: bicycledata
+
 layer:
-  custom: bicycledata-packages
   custom: bicycledata-service
