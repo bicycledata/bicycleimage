@@ -1,3 +1,6 @@
+include:
+  file: bookworm-minbase.yaml
+
 device:
   layer: rpi5
   user1: vti
