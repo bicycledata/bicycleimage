@@ -18,7 +18,3 @@ mmdebstrap:
         LINE="$(printf '%s\n' "$LINE" | sed -E 's/(^|[[:space:]])console=(serial0|ttyAMA0|ttyS0),115200([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
         printf '%s\n' "$LINE" > "$CMD"
       fi
-    - |
-      mkdir -p "$1/etc/systemd/system"
-      ln -sf /dev/null "$1/etc/systemd/system/serial-getty@ttyAMA0.service"
-      ln -sf /dev/null "$1/etc/systemd/system/serial-getty@ttyS0.service"

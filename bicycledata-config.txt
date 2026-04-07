@@ -48,6 +48,11 @@ otg_mode=1
 [cm5]
 dtoverlay=dwc2,dr_mode=host
 
+[pi5]
+BOOT_UART=1
+
 [all]
 enable_uart=1
+dtparam=uart0=on
+uart_2ndstage=1
 dtoverlay=disable-bt
