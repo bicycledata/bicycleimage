@@ -13,6 +13,12 @@ image:
   root_part_size: 1536M
   name: bicycledata
 
+locale:
+  default: sv_SE.UTF-8
+  timezone: Europe/Stockholm
+  keyboard_keymap: se
+  keyboard_layout: Swedish
+
 ssh:
   pubkey_only: n
 
