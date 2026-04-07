@@ -5,6 +5,10 @@
 # METAEND
 ---
 mmdebstrap:
+  packages:
+    - locales
+    - keyboard-configuration
+    - console-setup
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
@@ -17,4 +21,26 @@ mmdebstrap:
         LINE="$(cat "$CMD")"
         LINE="$(printf '%s\n' "$LINE" | sed -E 's/(^|[[:space:]])console=(serial0|ttyAMA0|ttyS0),115200([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
         printf '%s\n' "$LINE" > "$CMD"
+      fi
+    - |
+      printf 'sv_SE.UTF-8 UTF-8\n' > "$1/etc/locale.gen"
+      chroot "$1" locale-gen sv_SE.UTF-8 || true
+      printf 'LANG=sv_SE.UTF-8\n' > "$1/etc/default/locale"
+      printf 'LC_ALL=sv_SE.UTF-8\n' >> "$1/etc/default/locale"
+      printf 'Europe/Stockholm\n' > "$1/etc/timezone"
+      ln -sf /usr/share/zoneinfo/Europe/Stockholm "$1/etc/localtime"
+      cat > "$1/etc/default/keyboard" << 'EOF'
+XKBMODEL="pc105"
+XKBLAYOUT="se"
+XKBVARIANT=""
+XKBOPTIONS=""
+BACKSPACE="guess"
+EOF
+      WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
+      if [ -f "$WPA" ]; then
+        if grep -q '^country=' "$WPA"; then
+          sed -i 's/^country=.*/country=SE/' "$WPA"
+        else
+          printf 'country=SE\n' >> "$WPA"
+        fi
       fi
