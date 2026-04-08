@@ -1,6 +1,7 @@
 # METABEGIN
 # X-Env-Layer-Name: bicycledata-service
 # X-Env-Layer-Category: general
+# X-Env-Layer-Requires: locale-base
 # X-Env-VarPrefix: bicycledata
 # METAEND
 ---
@@ -30,6 +31,14 @@ mmdebstrap:
         rm -f "$1/etc/systemd/system/multi-user.target.wants/$UNIT"
         rm -f "$1/etc/systemd/system/$UNIT"
       done
+    - |
+      # Ensure /dev/serial0 exists by aliasing the active UART device.
+      install -d "$1/etc/udev/rules.d"
+      cat > "$1/etc/udev/rules.d/99-serial0.rules" << 'EOF'
+      SUBSYSTEM=="tty", KERNEL=="ttyAMA10", SYMLINK+="serial0"
+      SUBSYSTEM=="tty", KERNEL=="ttyAMA0", SYMLINK+="serial0"
+      SUBSYSTEM=="tty", KERNEL=="ttyS0", SYMLINK+="serial0"
+      EOF
     - |
       WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
       if [ -f "$WPA" ]; then

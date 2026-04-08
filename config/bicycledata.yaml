@@ -32,4 +32,5 @@ env:
   PSK: bicycledata
 
 layer:
+  base: bookworm-minbase
   custom: bicycledata-service
