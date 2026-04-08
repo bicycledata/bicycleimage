@@ -6,6 +6,11 @@
 # METAEND
 ---
 mmdebstrap:
+  packages:
+    - locales
+    - keyboard-configuration
+    - console-setup
+    - tzdata
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
@@ -31,6 +36,30 @@ mmdebstrap:
         rm -f "$1/etc/systemd/system/multi-user.target.wants/$UNIT"
         rm -f "$1/etc/systemd/system/$UNIT"
       done
+    - |
+      # Apply configured locale settings explicitly from IGconf values.
+      LOCALE_DEFAULT="${IGconf_locale_default:-sv_SE.UTF-8}"
+      LOCALE_TIMEZONE="${IGconf_locale_timezone:-Europe/Stockholm}"
+      LOCALE_KEYMAP="${IGconf_locale_keyboard_keymap:-se}"
+      LOCALE_LAYOUT="${IGconf_locale_keyboard_layout:-Swedish}"
+      printf '%s UTF-8\n' "$LOCALE_DEFAULT" > "$1/etc/locale.gen"
+      chroot "$1" locale-gen "$LOCALE_DEFAULT" || true
+      printf 'LANG=%s\n' "$LOCALE_DEFAULT" > "$1/etc/default/locale"
+      printf 'LC_ALL=%s\n' "$LOCALE_DEFAULT" >> "$1/etc/default/locale"
+      printf '%s\n' "$LOCALE_TIMEZONE" > "$1/etc/timezone"
+      ln -sf "/usr/share/zoneinfo/$LOCALE_TIMEZONE" "$1/etc/localtime"
+      cat > "$1/etc/default/keyboard" <<EOF
+      XKBMODEL="pc105"
+      XKBLAYOUT="$LOCALE_KEYMAP"
+      XKBVARIANT=""
+      XKBOPTIONS=""
+      BACKSPACE="guess"
+      EOF
+      chroot "$1" bash -c "
+        debconf-set-selections <<'EOD'
+        keyboard-configuration keyboard-configuration/xkb-keymap select $LOCALE_LAYOUT
+        EOD
+      " || true
     - |
       # Ensure /dev/serial0 exists by aliasing the active UART device.
       install -d "$1/etc/udev/rules.d"
