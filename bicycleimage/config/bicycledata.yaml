@@ -4,8 +4,8 @@ include:
 device:
   layer: rpi5
   user1: vti
-  user1pass: Fo0bar!!
-  hostname: bicycledatatest
+  user1pass: vti
+  hostname: bicycledata
 
 image:
   layer: image-rpios
