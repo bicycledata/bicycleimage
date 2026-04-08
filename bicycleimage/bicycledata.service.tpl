@@ -9,7 +9,7 @@ WorkingDirectory=/home/$BICYCLEDATA_USER/bicycleinit
 ExecStart=/home/$BICYCLEDATA_USER/bicycleinit/.env/bin/python3 bicycleinit.py
 
 Restart=always
-RestartSec=5
+RestartSec=15
 StartLimitInterval=0
 StartLimitBurst=0
 
