@@ -15,9 +15,21 @@ mmdebstrap:
       CMD="$1/boot/firmware/cmdline.txt"
       if [ -f "$CMD" ]; then
         LINE="$(cat "$CMD")"
-        LINE="$(printf '%s\n' "$LINE" | sed -E 's/(^|[[:space:]])console=(serial0|ttyAMA0|ttyS0),115200([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
+        LINE="$(printf '%s\n' "$LINE" | sed -E 's/(^|[[:space:]])console=(serial[0-9]+|ttyAMA[0-9]+|ttyS[0-9]+),[0-9]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
         printf '%s\n' "$LINE" > "$CMD"
       fi
+    - |
+      # Prevent login getty from taking UART devices on first boot.
+      for UNIT in \
+        serial-getty@serial0.service \
+        serial-getty@ttyAMA0.service \
+        serial-getty@ttyAMA10.service \
+        serial-getty@ttyS0.service
+      do
+        rm -f "$1/etc/systemd/system/getty.target.wants/$UNIT"
+        rm -f "$1/etc/systemd/system/multi-user.target.wants/$UNIT"
+        rm -f "$1/etc/systemd/system/$UNIT"
+      done
     - |
       WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
       if [ -f "$WPA" ]; then
