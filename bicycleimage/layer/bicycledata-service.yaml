@@ -22,7 +22,7 @@ mmdebstrap:
       # Provision a preinstalled venv for the bicycledata service.
       APP_HOME="/home/$IGconf_device_user1/bicycleinit"
       install -d "$1$APP_HOME"
-      chroot "$1" /usr/bin/python3 -m venv "$APP_HOME/.env"
+      chroot "$1" /usr/bin/python3 -m venv "$APP_HOME/.env" --system-site-packages
       chroot "$1" "$APP_HOME/.env/bin/pip" install --upgrade pip setuptools wheel
 
       # Optionally include app files from SRCROOT if they exist.
