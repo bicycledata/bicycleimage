@@ -50,6 +50,7 @@ dtoverlay=dwc2,dr_mode=host
 
 [pi5]
 BOOT_UART=1
+dtoverlay=uart0-pi5
 
 [all]
 enable_uart=1

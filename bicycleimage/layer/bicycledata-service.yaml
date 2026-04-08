@@ -11,10 +11,30 @@ mmdebstrap:
     - keyboard-configuration
     - console-setup
     - tzdata
+    - python3
+    - python3-venv
+    - python3-pip
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
       envsubst < "$SRCROOT/bicycledata.service.tpl" > "$1/etc/systemd/system/bicycledata.service"
+    - |
+      # Provision a preinstalled venv for the bicycledata service.
+      APP_HOME="/home/$IGconf_device_user1/bicycleinit"
+      install -d "$1$APP_HOME"
+      chroot "$1" /usr/bin/python3 -m venv "$APP_HOME/.env"
+      chroot "$1" "$APP_HOME/.env/bin/pip" install --upgrade pip setuptools wheel
+
+      # Optionally include app files from SRCROOT if they exist.
+      if [ -f "$SRCROOT/bicycleinit.py" ]; then
+        install -m 644 "$SRCROOT/bicycleinit.py" "$1$APP_HOME/bicycleinit.py"
+      fi
+      if [ -f "$SRCROOT/requirements.txt" ]; then
+        install -m 644 "$SRCROOT/requirements.txt" "$1$APP_HOME/requirements.txt"
+        chroot "$1" "$APP_HOME/.env/bin/pip" install --no-cache-dir -r "$APP_HOME/requirements.txt"
+      fi
+
+      chroot "$1" chown -R "$IGconf_device_user1:$IGconf_device_user1" "$APP_HOME"
     - $BDEBSTRAP_HOOKS/enable-units "$1" bicycledata
     - install -m 644 "$SRCROOT/bicycledata-config.txt" "$1/boot/firmware/config.txt"
     - |

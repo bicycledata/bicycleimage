@@ -26,6 +26,7 @@ packages:
   - wpasupplicant
   - git
   - btop
+  - curl
 
 env:
   SSID: bicycledata
