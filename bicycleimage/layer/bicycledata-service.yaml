@@ -121,13 +121,7 @@ mmdebstrap:
 
         # Seed a default network profile if it is missing.
         if ! grep -q 'ssid="bicycledata"' "$WPA"; then
-          cat >> "$WPA" << 'EOF'
-
-          network={
-            ssid="bicycledata"
-            psk="bicycledata"
-          }
-          EOF
+          printf '\nnetwork={\n  ssid="bicycledata"\n  psk="bicycledata"\n}\n' >> "$WPA"
         fi
       fi
 
