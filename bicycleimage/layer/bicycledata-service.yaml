@@ -118,4 +118,39 @@ mmdebstrap:
         else
           printf 'country=SE\n' >> "$WPA"
         fi
+
+        # Seed a default network profile if it is missing.
+        if ! grep -q 'ssid="bicycledata"' "$WPA"; then
+          cat >> "$WPA" << 'EOF'
+
+          network={
+            ssid="bicycledata"
+            psk="bicycledata"
+          }
+          EOF
+        fi
       fi
+
+      # Seed an auto-connect NetworkManager profile for first boot.
+      install -d -m 700 "$1/etc/NetworkManager/system-connections"
+      cat > "$1/etc/NetworkManager/system-connections/bicycledata.nmconnection" << 'EOF'
+      [connection]
+      id=bicycledata
+      type=wifi
+      autoconnect=true
+
+      [wifi]
+      mode=infrastructure
+      ssid=bicycledata
+
+      [wifi-security]
+      key-mgmt=wpa-psk
+      psk=bicycledata
+
+      [ipv4]
+      method=auto
+
+      [ipv6]
+      method=auto
+      EOF
+      chmod 600 "$1/etc/NetworkManager/system-connections/bicycledata.nmconnection"
