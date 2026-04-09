@@ -16,6 +16,8 @@ mmdebstrap:
     - python3-pip
     - python3-lgpio
     - python3-gpiozero
+    - network-manager
+    - bluez
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
@@ -37,6 +39,13 @@ mmdebstrap:
       fi
 
       chroot "$1" chown -R "$IGconf_device_user1:$IGconf_device_user1" "$APP_HOME"
+    - |
+      # Allow vti to run selected commands with sudo without password.
+      install -d -m 755 "$1/etc/sudoers.d"
+      cat > "$1/etc/sudoers.d/vti-nopasswd" << 'EOF'
+      vti ALL=(ALL) NOPASSWD: /usr/sbin/shutdown, /usr/bin/nmcli, /usr/bin/hciconfig
+      EOF
+      chmod 440 "$1/etc/sudoers.d/vti-nopasswd"
     - $BDEBSTRAP_HOOKS/enable-units "$1" bicycledata
     - install -m 644 "$SRCROOT/bicycledata-config.txt" "$1/boot/firmware/config.txt"
     - |
