@@ -13,10 +13,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 
 REPO_URL = "https://github.com/bicycledata/bicycleinit.git"
+WIFI_BOOTSTRAP_MARKER = Path("/var/lib/bicycledata/wifi-bootstrap.done")
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
@@ -35,9 +37,51 @@ def copy_tree(src: Path, dst: Path) -> None:
 			shutil.copy2(item, target)
 
 
+def bootstrap_wifi_from_env() -> None:
+	ssid = os.environ.get("BICYCLEDATA_WIFI_SSID", "").strip()
+	psk = os.environ.get("BICYCLEDATA_WIFI_PSK", "").strip()
+	if not ssid or not psk:
+		return
+	if WIFI_BOOTSTRAP_MARKER.exists():
+		return
+
+	for _ in range(30):
+		status = subprocess.run(
+			["sudo", "nmcli", "-t", "-f", "RUNNING", "general", "status"],
+			check=False,
+			capture_output=True,
+			text=True,
+		)
+		if status.returncode == 0 and status.stdout.strip() == "running":
+			break
+		time.sleep(2)
+
+	con_name = ssid
+	connections = subprocess.run(
+		["sudo", "nmcli", "-t", "-f", "NAME", "connection", "show"],
+		check=False,
+		capture_output=True,
+		text=True,
+	)
+	existing = set(line.strip() for line in connections.stdout.splitlines() if line.strip())
+
+	if con_name in existing:
+		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.key-mgmt", "wpa-psk"])
+		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.psk", psk])
+	else:
+		run(["sudo", "nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", con_name, "ssid", ssid])
+		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.key-mgmt", "wpa-psk"])
+		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.psk", psk])
+
+	subprocess.run(["sudo", "nmcli", "connection", "up", con_name], check=False)
+	WIFI_BOOTSTRAP_MARKER.parent.mkdir(parents=True, exist_ok=True)
+	WIFI_BOOTSTRAP_MARKER.touch()
+
+
 def main() -> int:
 	app_dir = Path(__file__).resolve().parent
 	this_script = Path(__file__).resolve()
+	bootstrap_wifi_from_env()
 
 	with tempfile.TemporaryDirectory(prefix="bicycleinit-bootstrap-") as tmp:
 		clone_dir = Path(tmp) / "repo"

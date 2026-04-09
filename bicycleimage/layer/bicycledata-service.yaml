@@ -21,6 +21,8 @@ mmdebstrap:
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
+      export BICYCLEDATA_WIFI_SSID="${IGconf_env_SSID:-}"
+      export BICYCLEDATA_WIFI_PSK="${IGconf_env_PSK:-}"
       envsubst < "$SRCROOT/bicycledata.service.tpl" > "$1/etc/systemd/system/bicycledata.service"
     - |
       # Provision a preinstalled venv for the bicycledata service.
