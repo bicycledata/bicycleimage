@@ -25,9 +25,6 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 def copy_tree(src: Path, dst: Path) -> None:
 	for item in src.iterdir():
-		if item.name == ".git":
-			continue
-
 		target = dst / item.name
 		if item.is_dir():
 			if target.exists():
