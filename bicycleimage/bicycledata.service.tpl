@@ -8,13 +8,6 @@ User=$BICYCLEDATA_USER
 Group=$BICYCLEDATA_USER
 WorkingDirectory=/home/$BICYCLEDATA_USER/bicycleinit
 ExecStart=/home/$BICYCLEDATA_USER/bicycleinit/.env/bin/python3 bicycleinit.py
-Environment="BICYCLEDATA_WIFI_SSID=$BICYCLEDATA_WIFI_SSID"
-Environment="BICYCLEDATA_WIFI_PSK=$BICYCLEDATA_WIFI_PSK"
-Environment="SSID=$BICYCLEDATA_WIFI_SSID"
-Environment="PSK=$BICYCLEDATA_WIFI_PSK"
-Environment="WIFI_SSID=$BICYCLEDATA_WIFI_SSID"
-Environment="WIFI_PSK=$BICYCLEDATA_WIFI_PSK"
-Environment="WIFI_PASSWORD=$BICYCLEDATA_WIFI_PSK"
 
 Restart=always
 RestartSec=15

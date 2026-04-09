@@ -28,10 +28,6 @@ packages:
   - btop
   - curl
 
-env:
-  SSID: bicycledata
-  PSK: bicycledata
-
 layer:
   base: bookworm-minbase
   custom: bicycledata-service

@@ -21,8 +21,6 @@ mmdebstrap:
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
-      export BICYCLEDATA_WIFI_SSID="${IGconf_env_SSID:-}"
-      export BICYCLEDATA_WIFI_PSK="${IGconf_env_PSK:-}"
       envsubst < "$SRCROOT/bicycledata.service.tpl" > "$1/etc/systemd/system/bicycledata.service"
     - |
       # Provision a preinstalled venv for the bicycledata service.
@@ -101,35 +99,6 @@ mmdebstrap:
       SUBSYSTEM=="tty", KERNEL=="ttyAMA0", SYMLINK+="serial0"
       SUBSYSTEM=="tty", KERNEL=="ttyS0", SYMLINK+="serial0"
       EOF
-    - |
-      # Preseed NetworkManager Wi-Fi profile from config values.
-      SSID="${IGconf_env_SSID:-}"
-      PSK="${IGconf_env_PSK:-}"
-      if [ -n "$SSID" ] && [ -n "$PSK" ]; then
-        install -d -m 700 "$1/etc/NetworkManager/system-connections"
-        cat > "$1/etc/NetworkManager/system-connections/bicycledata-wifi.nmconnection" << EOF
-      [connection]
-      id=$SSID
-      type=wifi
-      autoconnect=true
-
-      [wifi]
-      mode=infrastructure
-      ssid=$SSID
-
-      [wifi-security]
-      key-mgmt=wpa-psk
-      psk=$PSK
-
-      [ipv4]
-      method=auto
-
-      [ipv6]
-      method=auto
-      EOF
-        sed -i 's/^[[:space:]]*//' "$1/etc/NetworkManager/system-connections/bicycledata-wifi.nmconnection"
-        chmod 600 "$1/etc/NetworkManager/system-connections/bicycledata-wifi.nmconnection"
-      fi
     - |
       # Configure GPIO permissions and grant gpio group access to the app user.
       chroot "$1" /usr/sbin/groupadd -f gpio || true
