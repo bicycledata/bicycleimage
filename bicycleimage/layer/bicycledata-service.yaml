@@ -102,6 +102,17 @@ mmdebstrap:
       SUBSYSTEM=="tty", KERNEL=="ttyS0", SYMLINK+="serial0"
       EOF
     - |
+      # Configure GPIO permissions and grant gpio group access to the app user.
+      chroot "$1" /usr/sbin/groupadd -f gpio || true
+      if chroot "$1" id -u "$IGconf_device_user1" >/dev/null 2>&1; then
+        chroot "$1" /usr/sbin/usermod -aG gpio "$IGconf_device_user1" || true
+      fi
+      install -d "$1/etc/udev/rules.d"
+      cat > "$1/etc/udev/rules.d/99-gpio.rules" << 'EOF'
+      SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
+      SUBSYSTEM=="gpio", KERNEL=="gpio*", GROUP="gpio", MODE="0660"
+      EOF
+    - |
       WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
       if [ -f "$WPA" ]; then
         if grep -q '^country=' "$WPA"; then
