@@ -33,7 +33,7 @@ mmdebstrap:
 
       # Optionally include app files from SRCROOT if they exist.
       if [ -f "$SRCROOT/bicycleinit.py" ]; then
-        install -m 644 "$SRCROOT/bicycleinit.py" "$1$APP_HOME/bicycleinit.py"
+        install -m 755 "$SRCROOT/bicycleinit.py" "$1$APP_HOME/bicycleinit.py"
       fi
       if [ -f "$SRCROOT/requirements.txt" ]; then
         install -m 644 "$SRCROOT/requirements.txt" "$1$APP_HOME/requirements.txt"

@@ -55,6 +55,9 @@ def bootstrap_wifi_from_env() -> None:
 		if status.returncode == 0 and status.stdout.strip() == "running":
 			break
 		time.sleep(2)
+	else:
+		# NetworkManager not ready yet; service restart will retry.
+		return
 
 	con_name = ssid
 	connections = subprocess.run(
@@ -66,10 +69,13 @@ def bootstrap_wifi_from_env() -> None:
 	existing = set(line.strip() for line in connections.stdout.splitlines() if line.strip())
 
 	if con_name in existing:
+		run(["sudo", "nmcli", "connection", "modify", con_name, "connection.autoconnect", "yes"])
 		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.key-mgmt", "wpa-psk"])
 		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.psk", psk])
 	else:
-		run(["sudo", "nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", con_name, "ssid", ssid])
+		# Do not bind to wlan0 here; interface may not exist yet on early boot.
+		run(["sudo", "nmcli", "connection", "add", "type", "wifi", "con-name", con_name, "ssid", ssid])
+		run(["sudo", "nmcli", "connection", "modify", con_name, "connection.autoconnect", "yes"])
 		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.key-mgmt", "wpa-psk"])
 		run(["sudo", "nmcli", "connection", "modify", con_name, "wifi-sec.psk", psk])
 
