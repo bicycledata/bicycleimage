@@ -1,4 +1,7 @@
-.PHONY: build
+.PHONY: config build
+
+config:
+	cd rpi-image-gen && sudo ./install_deps.sh
 
 build:
 	cd rpi-image-gen && sudo git clean -fdx .

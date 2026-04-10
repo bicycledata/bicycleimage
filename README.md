@@ -19,9 +19,18 @@ The generated image includes:
 
 ## Build Instructions
 
-Before building, make sure to follow the [rpi-image-gen setup instructions](https://github.com/raspberrypi/rpi-image-gen).
+It is recommended to use the Raspberry Pi target hardware to build the image. Clone this repository, including its submodules, and follow the steps below to create the image.
 
-Once set up, build the image by running:
+### Initial setup
+
+The first time you run the build, rpi-image-gen needs to install its dependencies:
+```bash
+make config
+```
+
+### Build the image
+
+Once the setup is complete, build the image by running:
 ```bash
 make build
 ```
