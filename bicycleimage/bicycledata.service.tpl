@@ -1,7 +1,7 @@
 [Unit]
 Description=bicycledata service
-After=network.target NetworkManager.service
-Wants=NetworkManager.service
+After=expand-rootfs.service network.target NetworkManager.service
+Wants=expand-rootfs.service NetworkManager.service
 
 [Service]
 User=$BICYCLEDATA_USER
