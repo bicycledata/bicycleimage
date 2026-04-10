@@ -18,10 +18,60 @@ mmdebstrap:
     - python3-gpiozero
     - network-manager
     - bluez
+    - cloud-guest-utils
   customize-hooks:
     - |
       export BICYCLEDATA_USER="$IGconf_device_user1"
       envsubst < "$SRCROOT/bicycledata.service.tpl" > "$1/etc/systemd/system/bicycledata.service"
+    - |
+      # Install a one-shot first-boot rootfs expansion service.
+      install -d "$1/usr/local/sbin" "$1/etc/systemd/system"
+      cat > "$1/usr/local/sbin/expand-rootfs.sh" << 'EOF'
+      #!/bin/sh
+      set -eu
+
+      MARKER="/var/lib/bicycledata/rootfs-expanded"
+      mkdir -p "$(dirname "$MARKER")"
+      [ -f "$MARKER" ] && exit 0
+
+      ROOT_DEV="$(findmnt -n -o SOURCE /)"
+      ROOT_DEV="$(readlink -f "$ROOT_DEV" || printf '%s' "$ROOT_DEV")"
+
+      DISK_NAME="$(lsblk -no PKNAME "$ROOT_DEV" | head -n1)"
+      PART_NUM="$(lsblk -no PARTN "$ROOT_DEV" | head -n1)"
+
+      [ -n "$DISK_NAME" ]
+      [ -n "$PART_NUM" ]
+
+      DISK_DEV="/dev/$DISK_NAME"
+
+      growpart "$DISK_DEV" "$PART_NUM"
+      partprobe "$DISK_DEV" || true
+
+      FSTYPE="$(findmnt -n -o FSTYPE /)"
+      if [ "$FSTYPE" = "ext4" ]; then
+        resize2fs "$ROOT_DEV"
+      fi
+
+      touch "$MARKER"
+      EOF
+      chmod 755 "$1/usr/local/sbin/expand-rootfs.sh"
+
+      cat > "$1/etc/systemd/system/expand-rootfs.service" << 'EOF'
+      [Unit]
+      Description=Expand root partition and filesystem on first boot
+      DefaultDependencies=no
+      After=local-fs.target
+      ConditionPathExists=!/var/lib/bicycledata/rootfs-expanded
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/expand-rootfs.sh
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF
     - |
       # Provision a preinstalled venv for the bicycledata service.
       APP_HOME="/home/$IGconf_device_user1/bicycleinit"
@@ -56,7 +106,7 @@ mmdebstrap:
       vti ALL=(ALL) NOPASSWD: /usr/sbin/shutdown, /usr/bin/nmcli, /usr/bin/hciconfig
       EOF
       chmod 440 "$1/etc/sudoers.d/vti-nopasswd"
-    - $BDEBSTRAP_HOOKS/enable-units "$1" bicycledata
+    - $BDEBSTRAP_HOOKS/enable-units "$1" bicycledata expand-rootfs
     - install -m 644 "$SRCROOT/bicycledata-config.txt" "$1/boot/firmware/config.txt"
     - |
       CMD="$1/boot/firmware/cmdline.txt"
