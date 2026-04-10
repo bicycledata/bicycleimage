@@ -1,4 +1,6 @@
-.PHONY: config build
+.PHONY: all config build
+
+all: config build
 
 config:
 	cd rpi-image-gen && sudo ./install_deps.sh
