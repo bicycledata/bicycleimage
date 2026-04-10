@@ -40,6 +40,16 @@ mmdebstrap:
 
       chroot "$1" chown -R "$IGconf_device_user1:$IGconf_device_user1" "$APP_HOME"
     - |
+      # Record the source repository revision used for this image build.
+      INFO_FILE="$1/home/$IGconf_device_user1/bicycleinit/.info"
+      if git -C "$SRCROOT" rev-parse --git-dir >/dev/null 2>&1; then
+        SRC_HASH="$(git -C "$SRCROOT" rev-parse --verify HEAD)"
+      else
+        SRC_HASH="unknown"
+      fi
+      printf '%s\n' "$SRC_HASH" > "$INFO_FILE"
+      chroot "$1" chown "$IGconf_device_user1:$IGconf_device_user1" "/home/$IGconf_device_user1/bicycleinit/.info"
+    - |
       # Allow vti to run selected commands with sudo without password.
       install -d -m 755 "$1/etc/sudoers.d"
       cat > "$1/etc/sudoers.d/vti-nopasswd" << 'EOF'
