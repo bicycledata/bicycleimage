@@ -164,12 +164,20 @@ mmdebstrap:
       chroot "$1" /usr/sbin/groupadd -f gpio || true
       if chroot "$1" id -u "$IGconf_device_user1" >/dev/null 2>&1; then
         chroot "$1" /usr/sbin/usermod -aG gpio "$IGconf_device_user1" || true
+        chroot "$1" /usr/sbin/usermod -aG i2c "$IGconf_device_user1" || true
       fi
       install -d "$1/etc/udev/rules.d"
-      cat > "$1/etc/udev/rules.d/99-gpio.rules" << 'EOF'
+      cat > "$1/etc/udev/rules.d/99-bicycledata.rules" << 'EOF'
       SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
       SUBSYSTEM=="gpio", KERNEL=="gpio*", GROUP="gpio", MODE="0660"
+      ACTION=="add", KERNEL=="spidev0.0", MODE="0666"
+      ACTION=="add", KERNEL=="i2c-[0-1]*", MODE="0666"
+      ACTION=="add", KERNEL=="dialout", MODE="0666"
+      ACTION=="add", KERNEL=="ttyACM0", MODE="0666"
+      ACTION=="add", KERNEL=="ttyAMA0", MODE="0666"
+      ACTION=="add", KERNEL=="gpio", MODE="0666"
       EOF
+      echo "i2c-dev" >> $1/etc/modules 
     - |
       WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
       if [ -f "$WPA" ]; then
