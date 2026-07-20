@@ -7,6 +7,9 @@ dtparam=i2c_arm=on
 #dtparam=i2s=on
 #dtparam=spi=on
 
+# Enable RTC battery charging
+dtparam=rtc_bbat_vchg=3000000
+
 # Enable audio (loads snd_bcm2835)
 dtparam=audio=on
 
