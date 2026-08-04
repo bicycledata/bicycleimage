@@ -129,10 +129,10 @@ mmdebstrap:
       done
     - |
       # Apply configured locale settings explicitly from IGconf values.
-      LOCALE_DEFAULT="${IGconf_locale_default:-sv_SE.UTF-8}"
-      LOCALE_TIMEZONE="${IGconf_locale_timezone:-Europe/Stockholm}"
-      LOCALE_KEYMAP="${IGconf_locale_keyboard_keymap:-se}"
-      LOCALE_LAYOUT="${IGconf_locale_keyboard_layout:-Swedish}"
+      LOCALE_DEFAULT="${IGconf_locale_default:-en_US.UTF-8}"
+      LOCALE_TIMEZONE="${IGconf_locale_timezone:-America/Denver}"
+      LOCALE_KEYMAP="${IGconf_locale_keyboard_keymap:-us}"
+      LOCALE_LAYOUT="${IGconf_locale_keyboard_layout:-en_US}"
       printf '%s UTF-8\n' "$LOCALE_DEFAULT" > "$1/etc/locale.gen"
       chroot "$1" locale-gen "$LOCALE_DEFAULT" || true
       printf 'LANG=%s\n' "$LOCALE_DEFAULT" > "$1/etc/default/locale"
@@ -174,9 +174,9 @@ mmdebstrap:
       WPA="$1/etc/wpa_supplicant/wpa_supplicant.conf"
       if [ -f "$WPA" ]; then
         if grep -q '^country=' "$WPA"; then
-          sed -i 's/^country=.*/country=SE/' "$WPA"
+          sed -i 's/^country=.*/country=US/' "$WPA"
         else
-          printf 'country=SE\n' >> "$WPA"
+          printf 'country=US\n' >> "$WPA"
         fi
 
         # Seed a default network profile if it is missing.
