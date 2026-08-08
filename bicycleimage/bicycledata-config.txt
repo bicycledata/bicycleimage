@@ -3,9 +3,12 @@
 # Some settings may impact device functionality. See link above for details
 
 # Uncomment some or all of these to enable the optional hardware interfaces
-#dtparam=i2c_arm=on
+dtparam=i2c_arm=on
 #dtparam=i2s=on
 #dtparam=spi=on
+
+# Enable RTC battery charging
+dtparam=rtc_bbat_vchg=3000000
 
 # Enable audio (loads snd_bcm2835)
 dtparam=audio=on
@@ -49,11 +52,11 @@ otg_mode=1
 dtoverlay=dwc2,dr_mode=host
 
 [pi5]
-BOOT_UART=1
-dtoverlay=uart0-pi5
+# BOOT_UART=1
+# dtoverlay=uart0-pi5
 
 [all]
-enable_uart=1
-dtparam=uart0=on
-uart_2ndstage=1
-dtoverlay=disable-bt
+# enable_uart=1
+# dtparam=uart0=on
+# uart_2ndstage=1
+# dtoverlay=disable-bt
